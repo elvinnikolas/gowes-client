@@ -15,6 +15,8 @@ export const Footer = () => (
                     Gowes
                 </div>
                 <br></br>
+                <span>Made with <span class="heart">♥</span> by EN</span>
+                <br></br>
                 <List horizontal inverted divided link size='small'>
                     <List.Item as='a' href='#'>
                         Site Map

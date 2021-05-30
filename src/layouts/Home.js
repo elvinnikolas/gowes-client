@@ -1,11 +1,12 @@
-import React, { useContext, useState, useEffect } from 'react'
-import { Item, Transition, Grid, Segment, Dropdown, Icon, Divider } from 'semantic-ui-react'
+import React, { useContext, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Item, Transition, Grid, Segment, Dropdown, Icon, Divider, Header, Button, Ref, Sticky } from 'semantic-ui-react'
 
 import { ThreadExplore } from '../components/Thread'
 import Spinner from '../components/Spinner'
 import styled from 'styled-components'
 
-import { useQuery } from '@apollo/react-hooks'
+import { useQuery } from '@apollo/client'
 import { AuthContext } from '../context/auth'
 import { FETCH_QUERY_HOME } from '../util/graphql'
 
@@ -13,13 +14,15 @@ const Styles = styled.div`
 `
 
 function Home() {
+    const contextRef = React.createRef()
     const { auth } = useContext(AuthContext)
     const id = auth._id
     const [communityId, setCommunityId] = useState('000000000000000000000000')
+    const [filterOption, setfilterOption] = useState('recent')
     const [filterCommunity, setFilterCommunity] = useState(false)
 
     let { loading, data, refetch } = useQuery(FETCH_QUERY_HOME, {
-        variables: { id: id, communityId: communityId }
+        variables: { id: id, communityId: communityId, filter: filterOption }
     })
 
     const { getUserCommunities: communities, getUserCommunitiesPosts: allPosts, getUserCommunityPosts: filterPosts } = data ? data : []
@@ -60,7 +63,7 @@ function Home() {
         }
     ]
 
-    const onClickFilter = (e, { value }) => {
+    const onClickFilterCommunity = (e, { value }) => {
         e.persist()
         if (value !== 'all') {
             setFilterCommunity(true)
@@ -72,77 +75,100 @@ function Home() {
         refetch()
     }
 
+    const onClickFilter = (e, { value }) => {
+        e.persist()
+        setfilterOption(value)
+        refetch()
+    }
+
     return (
-        <Styles>
-            <Grid columns='equal'>
-                <Grid.Column>
-                </Grid.Column>
+        <Ref innerRef={contextRef}>
+            <Styles>
+                <Grid columns='equal'>
+                    <Grid.Column>
+                    </Grid.Column>
 
-                <Grid.Column width={14}>
-                    <Segment>
-                        <Grid columns={2} relaxed='very' stackable>
-                            <Grid.Column>
-                                <Icon name="eye" />
-                                <b>&nbsp;Show all threads from&nbsp;&nbsp;</b>
-                                <Dropdown
-                                    search
-                                    selection
-                                    options={communityOptions}
-                                    defaultValue={communityOptions[0].value}
-                                    onChange={onClickFilter}
-                                />
-                            </Grid.Column>
-                            <Grid.Column>
-                                <Icon name="filter" />
-                                <b>&nbsp;Sort by&nbsp;&nbsp;</b>
-                                <Dropdown
-                                    selection
-                                    options={filterOptions}
-                                    defaultValue={filterOptions[0].value}
-                                />
-                            </Grid.Column>
-                        </Grid>
-                        <Divider vertical />
-                    </Segment>
-                    <Segment placeholder>
-                        <Grid relaxed='very' stackable>
-                            <Grid.Column>
+                    <Grid.Column width={14}>
+                        <Sticky context={contextRef} offset={70}>
+                            <Segment>
+                                <Grid columns={2} relaxed='very' stackable>
+                                    <Grid.Column>
+                                        <Icon name="eye" />
+                                        <b>&nbsp;Show all threads from&nbsp;&nbsp;</b>
+                                        <Dropdown
+                                            search
+                                            selection
+                                            options={communityOptions}
+                                            defaultValue={communityOptions[0].value}
+                                            onChange={onClickFilterCommunity}
+                                        />
+                                    </Grid.Column>
+                                    <Grid.Column>
+                                        <Icon name="filter" />
+                                        <b>&nbsp;Sort by&nbsp;&nbsp;</b>
+                                        <Dropdown
+                                            selection
+                                            options={filterOptions}
+                                            defaultValue={filterOptions[0].value}
+                                            onChange={onClickFilter}
+                                        />
+                                    </Grid.Column>
+                                </Grid>
+                                <Divider vertical />
+                            </Segment>
+                        </Sticky>
+                        <Segment placeholder>
+                            <Grid relaxed='very' stackable>
+                                <Grid.Column>
 
-                                <Item.Group divided>
                                     {loading ? (
                                         <Spinner />
-                                    ) : (
-                                        filterCommunity ?
-                                            <Transition.Group>
-                                                {
-                                                    filterPosts &&
-                                                    filterPosts.map(post => (
-                                                        <ThreadExplore key={post._id} post={post} />
-                                                    ))
-                                                }
-                                            </Transition.Group>
-                                            :
-                                            <Transition.Group>
-                                                {
-                                                    allPosts &&
-                                                    allPosts.map(post => (
-                                                        <ThreadExplore key={post._id} post={post} />
-                                                    ))
-                                                }
-                                            </Transition.Group>
-                                    )
+                                    ) : communities.length > 0 || allPosts.length > 0 ?
+                                        (<Item.Group divided>
+                                            {filterCommunity ?
+                                                (<Transition.Group>
+                                                    {
+                                                        filterPosts &&
+                                                        filterPosts.map(post => (
+                                                            <ThreadExplore key={post._id} post={post} refetch={refetch} />
+                                                        ))
+                                                    }
+                                                </Transition.Group>)
+                                                :
+                                                (<Transition.Group>
+                                                    {
+                                                        allPosts &&
+                                                        allPosts.map(post => (
+                                                            <ThreadExplore key={post._id} post={post} refetch={refetch} />
+                                                        ))
+                                                    }
+                                                </Transition.Group>)}
+                                        </Item.Group>) : (
+                                            <Segment placeholder>
+                                                <Header icon>
+                                                    <Icon name='edit' />
+                                                    No community or threads yet
+                                                    <br></br><br></br>
+                                                    <Link to={`/explore-community`}>
+                                                        <Button primary>
+                                                            EXPLORE
+                                                        </Button>
+                                                    </Link>
+                                                </Header>
+                                            </Segment>
+                                        )
                                     }
-                                </Item.Group>
 
-                            </Grid.Column>
-                        </Grid>
-                    </Segment>
-                </Grid.Column>
+                                </Grid.Column>
+                            </Grid>
+                        </Segment>
+                    </Grid.Column>
 
-                <Grid.Column>
-                </Grid.Column>
-            </Grid>
-        </Styles>
+                    <Grid.Column>
+                    </Grid.Column>
+                </Grid>
+            </Styles>
+        </Ref>
     )
 }
 export default Home

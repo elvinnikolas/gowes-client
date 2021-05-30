@@ -1,10 +1,10 @@
-import React, { Fragment, useContext, useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { Button, Form, Grid, Segment, Header, Divider } from 'semantic-ui-react'
 import { Link } from 'react-router-dom'
 import styled from 'styled-components'
 
-import gql from 'graphql-tag'
-import { useMutation } from '@apollo/react-hooks'
+import { REGISTER_USER } from '../util/graphql'
+import { useMutation } from '@apollo/client'
 import { useForm } from '../util/hooks'
 import { AuthContext } from '../context/auth'
 
@@ -12,28 +12,6 @@ const Styles = styled.div`
   .my-1 {
     margin: 1rem 0;
   }
-`;
-
-const REGISTER_USER = gql`
-    mutation register(
-        $name: String!
-        $email: String!
-        $password: String!
-    ) {
-        register(
-            registerInput: {
-                name: $name,
-                email: $email,
-                password: $password
-            }
-        ) {
-            _id
-            name
-            email
-            date
-            token
-        }
-    }
 `
 
 function Register(props) {
@@ -47,7 +25,7 @@ function Register(props) {
         password2: ''
     })
 
-    const [addUser, { loading }] = useMutation(REGISTER_USER, {
+    const [addUser] = useMutation(REGISTER_USER, {
         update(_, result) {
             context.login(result.data.register)
             props.history.push('/')
@@ -61,15 +39,6 @@ function Register(props) {
     function registerUser() {
         addUser()
     }
-
-    // const onSubmit = async e => {
-    //     e.preventDefault()
-    //     if (password !== password2) {
-    //         { errors.password2 = 'Password does not match' }
-    //     } else {
-    //         addUser()
-    //     }
-    // }
 
     return (
         <Styles>

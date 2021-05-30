@@ -3,31 +3,15 @@ import { Button, Form, Grid, Segment, Header, Divider } from 'semantic-ui-react'
 import { Link } from 'react-router-dom'
 import styled from 'styled-components'
 
-import gql from 'graphql-tag'
-import { useMutation } from '@apollo/react-hooks'
+import { useMutation } from '@apollo/client'
 import { useForm } from '../util/hooks'
 import { AuthContext } from '../context/auth'
+import { LOGIN_USER } from '../util/graphql'
 
 const Styles = styled.div`
   .my-1 {
     margin: 1rem 0;
   }
-`
-
-const LOGIN_USER = gql`
-    mutation login(
-        $email: String!
-        $password: String!
-    ) {
-        login(email: $email, password: $password) 
-        {
-            _id
-            name
-            email
-            date
-            token
-        }
-    }
 `
 
 function Login(props) {
@@ -39,10 +23,11 @@ function Login(props) {
     password: ''
   })
 
-  const [login, { loading }] = useMutation(LOGIN_USER, {
+  const [login] = useMutation(LOGIN_USER, {
     update(_, result) {
       context.login(result.data.login)
-      props.history.push('/')
+      // props.history.push('/')
+      window.location.href = '/'
     },
     onError(error) {
       setErrors(error.graphQLErrors[0].extensions.exception.errors);

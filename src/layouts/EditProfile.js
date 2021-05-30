@@ -1,14 +1,12 @@
-import React, { Fragment, useContext, useState } from 'react'
-import { Link, withRouter, useHistory } from 'react-router-dom'
-import { Grid, Segment, Button, Form, Dropdown, Header, Divider, Icon } from 'semantic-ui-react'
-import { Row, Col } from 'react-bootstrap'
+import React, { useContext, useState } from 'react'
+import { storage } from '../firebase'
+import { useHistory } from 'react-router-dom'
+import { Grid, Segment, Button, Form, Header, Divider, Icon, Progress, Container } from 'semantic-ui-react'
 import styled from 'styled-components'
 import Spinner from '../components/Spinner'
 
-import gql from 'graphql-tag'
-import { useMutation, useQuery } from '@apollo/react-hooks'
-
 import { AuthContext } from '../context/auth'
+import { useMutation, useQuery } from '@apollo/client'
 import { useForm } from '../util/hooks'
 import { GET_USER, EDIT_PROFILE } from '../util/graphql'
 
@@ -21,33 +19,59 @@ function EditProfile() {
     const context = useContext(AuthContext)
     const { auth } = useContext(AuthContext)
     let id = auth._id
-
     let history = useHistory()
 
     const { loading, data } = useQuery(GET_USER, {
         variables: { id }
     })
-    const { getUser } = data ? data : []
+    const { getUser: user } = data ? data : []
 
-    const [errors, setErrors] = useState({})
+    const fileInputRef = React.createRef()
+    const [progress, setProgress] = useState(0)
+    const [url, setUrl] = useState(user.image)
+
     const { onChange, onSubmit, values } = useForm(editProfileCallback, {
-        name: getUser.name,
-        bio: getUser.bio
+        name: user.name,
+        bio: user.bio
     })
 
-    const [editProfile, { error }] = useMutation(EDIT_PROFILE, {
+    const [editProfile] = useMutation(EDIT_PROFILE, {
         update(_, result) {
             context.update(result.data.editProfile)
             history.push('/user-profile')
         },
-        onError(error) {
-            setErrors(error.graphQLErrors[0].extensions.exception.errors);
-        },
-        variables: values
+        variables: { name: values.name, bio: values.bio, image: url }
     })
 
     function editProfileCallback() {
         editProfile()
+    }
+
+    function onCancel() {
+        history.push('/user-profile')
+    }
+
+    const handleUpload = (e) => {
+        const image = e.target.files[0]
+        if (image) {
+            const uploadTask = storage.ref(`profile/${image.name}`).put(image)
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    // progress function ....
+                    const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
+                    setProgress(progress)
+                },
+                (error) => {
+                    // error function ....
+                    console.log(error)
+                },
+                () => {
+                    // complete function ....
+                    storage.ref('profile').child(image.name).getDownloadURL().then(url => {
+                        setUrl(url)
+                    })
+                })
+        }
     }
 
     if (loading) {
@@ -55,8 +79,6 @@ function EditProfile() {
             <Spinner />
         )
     } else {
-        const { _id, name, bio } = getUser
-
         return (
             <Styles>
                 <Grid columns='equal'>
@@ -70,41 +92,62 @@ function EditProfile() {
                                 <Icon name='pencil' />
                                 Edit Profile
                             </Header>
-                            <Form className="form" onSubmit={e => onSubmit(e)}>
-                                <Form.Field>
-                                    <label>Name:</label>
-                                    <input
-                                        name='name'
-                                        placeholder='Name'
-                                        value={values.name}
+                            <Container textAlign='center'>
+                                <Form className="form" onSubmit={e => onSubmit(e)}>
+                                    <Divider />
+                                    <Form.Field>
+                                        <label>Image:</label>
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            hidden
+                                            onChange={handleUpload}
+                                        />
+                                        <img src={url || user.image} height="200" width="200" />
+                                        {progress < 100 ? (
+                                            <Progress percent={progress} progress />
+                                        ) : (
+                                            <Progress percent={progress} color='green' progress />
+                                        )}
+                                        <Button.Group fluid>
+                                            <Button type="button" primary
+                                                onClick={() => fileInputRef.current.click()}
+                                            >
+                                                Upload
+                                        </Button>
+                                            <Button.Or />
+                                            <Button type="button" secondary
+                                                onClick={() => setUrl('https://firebasestorage.googleapis.com/v0/b/gowes-community.appspot.com/o/profile%2Fprofile.jpg?alt=media&token=f4906486-2686-47e8-95a9-68719f51e05f')}
+                                            >
+                                                Remove
+                                        </Button>
+                                        </Button.Group>
+                                    </Form.Field>
+                                    <Divider />
+                                    <Form.Field>
+                                        <label>Name:</label>
+                                        <input
+                                            name='name'
+                                            placeholder='Name'
+                                            value={values.name}
+                                            onChange={e => onChange(e)}
+                                        />
+                                    </Form.Field>
+                                    <Form.TextArea
+                                        name='bio'
+                                        label='Bio:'
+                                        placeholder='Bio'
+                                        value={values.bio}
                                         onChange={e => onChange(e)}
-                                        error={error ? true : false}
                                     />
-                                </Form.Field>
-                                <Form.TextArea
-                                    name='bio'
-                                    label='Bio:'
-                                    placeholder='Bio'
-                                    value={values.bio}
-                                    onChange={e => onChange(e)}
-                                    error={error ? true : false}
-                                />
-                                {/* <Button.Group> */}
-                                <Button positive type='submit' fluid>Submit</Button>
-                                {/* <Button.Or /> */}
-                                <br></br>
-                                <Link to='/user-profile'>
-                                    <Button negative fluid>Cancel</Button>
-                                </Link>
-                                {/* </Button.Group> */}
-                            </Form>
-                            {error && (
-                                <div className="ui error message">
-                                    <div className="list">
-                                        <li>{error.graphQLErrors[0].message}</li>
-                                    </div>
-                                </div>
-                            )}
+                                    <br></br>
+                                    <Button.Group>
+                                        <Button positive type='submit'>Save</Button>
+                                        <Button.Or />
+                                        <Button type='button' onClick={onCancel} negative>Cancel</Button>
+                                    </Button.Group>
+                                </Form>
+                            </Container>
                         </Segment>
 
                     </Grid.Column>

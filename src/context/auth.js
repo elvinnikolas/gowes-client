@@ -15,6 +15,16 @@ if (localStorage.getItem('token')) {
     }
 }
 
+if (localStorage.getItem('name')) {
+    const name = localStorage.getItem('name')
+    initialState.auth.name = name
+}
+
+if (localStorage.getItem('image')) {
+    const image = localStorage.getItem('image')
+    initialState.auth.image = image
+}
+
 const AuthContext = createContext({
     auth: null,
     login: (authData) => { },
@@ -56,12 +66,15 @@ function AuthProvider(props) {
     }
     function logout() {
         localStorage.removeItem('token')
+        localStorage.removeItem('name')
+        localStorage.removeItem('image')
         dispatch({
             type: 'LOGOUT'
         })
     }
     function update(authData) {
         localStorage.setItem('name', authData.name)
+        localStorage.setItem('image', authData.image)
         dispatch({
             type: 'UPDATE',
             payload: authData

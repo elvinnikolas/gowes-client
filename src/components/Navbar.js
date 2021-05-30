@@ -7,7 +7,7 @@ import styled from 'styled-components'
 
 import { AuthContext } from '../context/auth'
 
-import profilePic from '../assets/profile.jpg'
+import profileImage from '../assets/profile.jpg'
 
 const Styles = styled.div`
   .navbar {
@@ -15,7 +15,7 @@ const Styles = styled.div`
   }
 
   .logo { 
-    fontSize: 30;
+    fontSize: 24;
     marginRight: 5;
   }
 
@@ -26,13 +26,17 @@ const Styles = styled.div`
   .navbar-text {
     font-family: 'Roboto', cursive;
     color: rgb(206, 206, 206);
-    font-size: 25px;
+    font-size: 20px;
   }
 
   .navbar-subtext {
     font-family: 'Roboto', cursive;
     color: rgb(206, 206, 206);
-    font-size: 20px;
+    font-size: 18px;
+  }
+
+  .navbar-style {
+    z-index: 1000;
   }
 `
 const NavbarDefault = () => {
@@ -55,12 +59,12 @@ const NavbarDefault = () => {
   const NavbarMenu =
     auth ?
       (
-        <Segment>
+        <Segment className='navbar-style'>
           <div className='ui huge top inverted fixed menu navbar'>
             <Menu size="large" fluid inverted secondary>
               <Menu.Item></Menu.Item>
               <Menu.Item
-                style={{ marginRight: 100 }}
+                style={{ marginRight: 50 }}
                 active={activeItem === 'home'}
                 onClick={handleItemClick}
                 as={Link}
@@ -85,31 +89,71 @@ const NavbarDefault = () => {
                 as={Link}
                 to="/faq"
               />
-              <Menu.Item
-                className="navbar-subtext"
-                name='EXPLORE'
-                active={activeItem === 'EXPLORE'}
-                onClick={handleItemClick}
-                as={Link}
-                to="/explore-thread"
-              />
-              <Menu.Item
-                className="navbar-subtext"
-                name='COMMUNITY'
-                active={activeItem === 'COMMUNITY'}
-                onClick={handleItemClick}
-                as={Link}
-                to="/explore-community"
-              />
-              {/* <Menu.Item
-                className="navbar-subtext"
-                name='MARKETPLACE'
-                active={activeItem === 'MARKETPLACE'}
-                onClick={handleItemClick}
-                as={Link}
-                to="/marketplace"
-              /> */}
+              <Menu.Item>
+                <Dropdown simple className="navbar-subtext" item text='EXPLORE'>
+                  <Dropdown.Menu>
+                    <Dropdown.Item
+                      className="navbar-subtext"
+                      name='COMMUNITY'
+                      active={activeItem === 'COMMUNITY'}
+                      onClick={handleItemClick}
+                      as={Link}
+                      to="/explore-community"
+                    >
+                      COMMUNITY
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                      className="navbar-subtext"
+                      name='THREAD'
+                      active={activeItem === 'THREAD'}
+                      onClick={handleItemClick}
+                      as={Link}
+                      to="/explore-thread"
+                    >
+                      THREAD
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                      className="navbar-subtext"
+                      name='MARKETPLACE'
+                      active={activeItem === 'MARKETPLACE'}
+                      onClick={handleItemClick}
+                      as={Link}
+                      to="/marketplace"
+                    >
+                      MARKETPLACE
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              </Menu.Item>
 
+              {auth.isAdmin &&
+                <Menu.Item>
+                  <Dropdown simple className="navbar-subtext" item text='ADMIN'>
+                    <Dropdown.Menu>
+                      <Dropdown.Item
+                        className="navbar-subtext"
+                        name='FAQ-ADMIN'
+                        active={activeItem === 'FAQ-ADMIN'}
+                        onClick={handleItemClick}
+                        as={Link}
+                        to="/faq-admin"
+                      >
+                        FAQ
+                      </Dropdown.Item>
+                      <Dropdown.Item
+                        className="navbar-subtext"
+                        name='COMMUNITY-ADMIN'
+                        active={activeItem === 'COMMUNITY-ADMIN'}
+                        onClick={handleItemClick}
+                        as={Link}
+                        to="/community-admin"
+                      >
+                        COMMUNITY
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </Menu.Item>
+              }
 
               <Menu.Menu position='right'>
                 <Menu.Item
@@ -139,11 +183,27 @@ const NavbarDefault = () => {
                 </Menu.Item>
 
                 <Menu.Item
+                  className="navbar-subtext"
+                  name='notification'
+                  active={activeItem === 'notification'}
+                  onClick={handleItemClick}
+                  as={Link}
+                  to="/notification"
+                >
+                  <Popup content="Notification">
+                    <Icon name="bell" centered="true"></Icon>
+                  </Popup>
+                </Menu.Item>
+
+                <Menu.Item
                   as={Link}
                   to="/user-profile"
                   className="navbar-subtext"
                 >
-                  <Image circular src={profilePic} style={{ height: 30, marginRight: 0 }} verticalAlign='middle' />
+                  {auth.image ?
+                    <Image circular src={auth.image} style={{ height: 30, marginRight: 0 }} verticalAlign='middle' />
+                    : <Image circular src={profileImage} style={{ height: 30, marginRight: 0 }} verticalAlign='middle' />
+                  }
                   &nbsp;&nbsp;{showname}
                 </Menu.Item>
 
@@ -175,7 +235,7 @@ const NavbarDefault = () => {
             <Menu fluid inverted secondary size='large'>
               <Menu.Item></Menu.Item>
               <Menu.Item
-                style={{ marginRight: 100 }}
+                style={{ marginRight: 70 }}
                 active={activeItem === ''}
                 onClick={handleItemClick}
                 as={Link}
@@ -193,21 +253,39 @@ const NavbarDefault = () => {
                 as={Link}
                 to="/faq"
               />
+              <Menu.Item>
+                <Dropdown simple className="navbar-subtext" item text='EXPLORE'>
+                  <Dropdown.Menu>
+                    <Dropdown.Item
+                      className="navbar-subtext"
+                      name='COMMUNITY'
+                      active={activeItem === 'COMMUNITY'}
+                      onClick={handleItemClick}
+                      as={Link}
+                      to="/explore-community-guest"
+                    >
+                      COMMUNITY
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                      className="navbar-subtext"
+                      name='THREAD'
+                      active={activeItem === 'THREAD'}
+                      onClick={handleItemClick}
+                      as={Link}
+                      to="/explore-thread-guest"
+                    >
+                      THREAD
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              </Menu.Item>
               <Menu.Item
                 className="navbar-subtext"
-                name='EXPLORE'
-                active={activeItem === 'EXPLORE'}
+                name='MARKETPLACE'
+                active={activeItem === 'MARKETPLACE'}
                 onClick={handleItemClick}
                 as={Link}
-                to="/explore-thread"
-              />
-              <Menu.Item
-                className="navbar-subtext"
-                name='COMMUNITY'
-                active={activeItem === 'COMMUNITY'}
-                onClick={handleItemClick}
-                as={Link}
-                to="/explore-community"
+                to="/marketplace"
               />
 
 
