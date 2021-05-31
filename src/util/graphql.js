@@ -35,7 +35,9 @@ export const REGISTER_USER = gql`
             _id
             name
             email
+            image
             date
+            isAdmin
             token
         }
     }
@@ -820,6 +822,7 @@ export const GET_FAQS = gql`
             category
             contents{
                 _id
+                image
                 question
                 answer
             }
@@ -1197,6 +1200,7 @@ export const ADD_FAQ_CATEGORY = gql`
             category
             contents{
                 _id
+                image
                 question
                 answer
             }
@@ -1215,14 +1219,16 @@ export const REMOVE_FAQ = gql`
 export const ADD_FAQ = gql`
   mutation addFaqCategory(
       $category: String!
+      $image: String
       $question: String!
       $answer: String!
     ) {
-        addFaq(category: $category, question: $question, answer: $answer) {
+        addFaq(category: $category, image: $image, question: $question, answer: $answer) {
             _id
             category
             contents{
                 _id
+                image
                 question
                 answer
             }

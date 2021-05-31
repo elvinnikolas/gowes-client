@@ -288,7 +288,6 @@ const NavbarDefault = () => {
                 href="http://gowes-market-react-client.herokuapp.com/"
               />
 
-
               <Menu.Menu position='right'>
                 <Menu.Item>
                   <Button

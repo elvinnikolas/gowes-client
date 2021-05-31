@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { Grid, Tab, Accordion, Icon, Header, Message, Button, Label, Divider, Form, Dropdown, Input, TextArea, Menu, Container, Modal, Ref, Sticky } from 'semantic-ui-react'
+import { storage } from '../firebase'
+import { Grid, Tab, Accordion, Icon, Header, Message, Button, Label, Divider, Form, Image, Dropdown, Input, TextArea, Menu, Container, Progress, Modal, Ref, Sticky } from 'semantic-ui-react'
 import Spinner from '../components/Spinner'
 import styled from 'styled-components'
 
@@ -16,7 +17,7 @@ const Styles = styled.div`
     font-size: 14px;
     white-space: pre-line;
   }
-`;
+`
 
 export function Faq() {
     const contextRef = React.createRef()
@@ -62,9 +63,16 @@ export function Faq() {
                                                                 title: content.question,
                                                                 content: {
                                                                     content: (
-                                                                        <Message className="paragraph"
-                                                                            content={content.answer}
-                                                                        />
+                                                                        <>
+                                                                            {content.image && content.image !== '' &&
+                                                                                <Container textAlign='center'>
+                                                                                    <Image src={content.image} size="medium" />
+                                                                                </Container>
+                                                                            }
+                                                                            <Message className="paragraph"
+                                                                                content={content.answer}
+                                                                            />
+                                                                        </>
                                                                     ),
                                                                 }
                                                             }
@@ -92,6 +100,7 @@ export function Faq() {
 
 export function FaqAdmin() {
     const contextRef = React.createRef()
+    const fileInputRef = React.createRef()
 
     const [addTopic, setAddTopic] = useState('')
     const [removeTopic, setRemoveTopic] = useState('')
@@ -107,6 +116,9 @@ export function FaqAdmin() {
 
     const { getFaqs: faqs } = data ? data : []
 
+    const [image, setImage] = useState('')
+    const [progress, setProgress] = useState(0)
+
     let categoryOptions = []
     if (faqs) {
         faqs.forEach(faq => {
@@ -116,6 +128,29 @@ export function FaqAdmin() {
                 value: faq.category,
             })
         })
+    }
+
+    const handleUpload = (e) => {
+        const image = e.target.files[0]
+        if (image) {
+            const uploadTask = storage.ref(`faq/${image.name}`).put(image)
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    // progress function ....
+                    const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
+                    setProgress(progress)
+                },
+                (error) => {
+                    // error function ....
+                    console.log(error)
+                },
+                () => {
+                    // complete function ....
+                    storage.ref('faq').child(image.name).getDownloadURL().then(url => {
+                        setImage(url)
+                    })
+                })
+        }
     }
 
     const [addFaqCategory] = useMutation(ADD_FAQ_CATEGORY, {
@@ -128,10 +163,12 @@ export function FaqAdmin() {
     })
 
     const [addFaq] = useMutation(ADD_FAQ, {
-        variables: { category: addCategory, question: addQuestion, answer: addAnswer },
+        variables: { category: addCategory, image: image, question: addQuestion, answer: addAnswer },
         update() {
             refetch()
             setAddFaqModal(false)
+            setImage('')
+            setProgress(0)
             setAddCategory('')
             setAddQuestion('')
             setAddAnswer('')
@@ -152,6 +189,10 @@ export function FaqAdmin() {
     }
     const onChangeRemoveDropdown = (e, data) => {
         setRemoveTopic(data.value)
+    }
+
+    function onRemoveImage() {
+        setImage('')
     }
 
     if (loading) {
@@ -229,6 +270,46 @@ export function FaqAdmin() {
                                                         options={categoryOptions}
                                                         onChange={onChangeAddDropdown}
                                                     />
+                                                    <Divider hidden />
+                                                    <Form.Field>
+                                                        <Label>Image (Optional):</Label>
+                                                        {image !== '' &&
+                                                            (<Image src={image} size='small' />)
+                                                        }
+                                                        {image !== '' && progress > 0 ?
+                                                            progress < 100 ? (
+                                                                <Progress percent={progress} progress />
+                                                            ) : (
+                                                                <Progress percent={progress} color='green' progress />
+                                                            ) : []
+                                                        }
+                                                        <br></br>
+                                                        <Button
+                                                            type="button"
+                                                            size='tiny'
+                                                            primary
+                                                            onClick={() => fileInputRef.current.click()}
+                                                            icon="plus"
+                                                            content="Add Image"
+                                                            disabled={image !== '' ? true : false}
+                                                        />
+                                                        {image !== '' &&
+                                                            <Button
+                                                                type="button"
+                                                                size='tiny'
+                                                                secondary
+                                                                onClick={onRemoveImage}
+                                                                icon="minus"
+                                                                content="Remove Image"
+                                                            />
+                                                        }
+                                                        <input
+                                                            ref={fileInputRef}
+                                                            type="file"
+                                                            hidden
+                                                            onChange={handleUpload}
+                                                        />
+                                                    </Form.Field>
                                                     <Divider hidden />
                                                     <Label>Question:</Label>
                                                     <Input
@@ -321,9 +402,16 @@ export function FaqAdmin() {
                                                                 title: content.question,
                                                                 content: {
                                                                     content: (
-                                                                        <Message className="paragraph"
-                                                                            content={content.answer}
-                                                                        />
+                                                                        <>
+                                                                            {content.image && content.image !== '' &&
+                                                                                <Container textAlign='center'>
+                                                                                    <Image src={content.image} size="medium" />
+                                                                                </Container>
+                                                                            }
+                                                                            <Message className="paragraph"
+                                                                                content={content.answer}
+                                                                            />
+                                                                        </>
                                                                     ),
                                                                 }
                                                             }
@@ -344,7 +432,7 @@ export function FaqAdmin() {
                         </Grid.Column>
                     </Grid>
                 </Styles>
-            </Ref>
+            </Ref >
         )
     }
 }
